@@ -9,4 +9,7 @@ def EER(y, y_pred, return_threshold=False):
     EER1 = FAR[np.argmin(diff)]
     EER2 = FRR[np.argmin(diff)]
     EER = (EER1 + EER2)/2
-    return EER, eer_threshold
+    if(return_threshold):
+        return EER, eer_threshold
+    else:
+        return EER
