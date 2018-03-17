@@ -17,7 +17,7 @@ TRAIN_UTTERANCES = [u for u in glob('data\\*\\*.wav')
                     if not u.split('\\')[1].startswith('E')]
 TRAIN_POIS = sorted(set([u.split('\\')[1] for u in TRAIN_UTTERANCES]))
 TRAIN_PAIRS = []
-POSITIVE_TRIALS_PER_UTTERANCE = 4  # same as negative trials to keep it balanced
+POSITIVE_TRIALS_PER_UTTERANCE = 2  # same as negative trials to keep it balanced
 
 columns = ['is_match', 'POI_wav', 'Query_wav']
 
