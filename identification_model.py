@@ -6,18 +6,24 @@ np.random.seed(42)
 from keras import backend as K
 from keras.models import Model
 from keras.layers import Input, Dense, Dropout, Bidirectional, concatenate, SpatialDropout1D
-from keras.layers import CuDNNGRU, GlobalAvgPool1D, GlobalMaxPool1D, BatchNormalization
+from keras.layers import CuDNNGRU, CuDNNLSTM, GlobalAvgPool1D, GlobalMaxPool1D, BatchNormalization
 
-def id_model(compile=True):
+def id_model(compile=True, lstm=True, verif=False):
     inp = Input(shape=(299, 26))
     x = SpatialDropout1D(.1)(inp)
-    x = Bidirectional(CuDNNGRU(256, return_sequences=True))(x)
+    if(lstm):
+        x = Bidirectional(CuDNNLSTM(256, return_sequences=True))(x)
+    else:
+        x = Bidirectional(CuDNNGRU(256, return_sequences=True))(x)
     gmp = GlobalMaxPool1D()(x)
     gap = GlobalAvgPool1D()(x)
     x = concatenate([gmp, gap])
     x = Dropout(.5)(x)
     x = BatchNormalization()(x)
-    x = Dense(1251, activation='softmax')(x)
+    if(verif):
+        x = Dense(1211, activation='softmax')(x)
+    else:
+        x = Dense(1251, activation='softmax')(x)
     model = Model(inp, x)
     if(compile):
         model.compile(loss='categorical_crossentropy',
