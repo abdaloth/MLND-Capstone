@@ -6,7 +6,7 @@ import pandas as pd
 
 np.random.seed(42)
 from keras import backend as K
-from keras.callbacks import EarlyStopping
+from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.models import Model, load_model
 from keras.layers import Input, Dense, Dropout, concatenate, Lambda, Activation
 from keras.layers import BatchNormalization
@@ -41,11 +41,11 @@ def verif_model():
     input_POI = Input(shape=(299, 26))
     input_Query = Input(shape=(299, 26))
 
-    base_model = id_model(compile=False)
+    base_model = id_model(compile=False, verif=True)
     base_model.trainable = False
     base_model.name = 'siamese_id_path'
     base_model.layers[-1].activation = Activation('sigmoid', name='activation')
-    base_model.load_weights('meta/models/identification_model.h5')
+    base_model.load_weights('meta/models/lstm_identification_model.h5')
     POI = base_model(input_POI)
     Query = base_model(input_Query)
     out = concatenate([POI, Query])
@@ -86,16 +86,20 @@ model = verif_model()
 model.summary()
 #%%
 BATCH_SIZE = 512
-es = EarlyStopping(patience=3)
+es = EarlyStopping(patience=20)
+cp = ModelCheckpoint('meta/models/verification_model_v2_weights.h5',
+                    monitor='val_acc',
+                    save_best_only=True,
+                    save_weights_only=True)
+
 hist = model.fit([POI_train, QUERY_train],
                  y_train,
                  validation_data=([POI_val, QUERY_val], y_val),
-                 # initial_epoch=10,
-                 epochs=10,
+                 epochs=100,
                  batch_size=BATCH_SIZE,
-                 callbacks=[es])
+                 callbacks=[es, cp])
 #%%
-
+model.load_weights('meta/models/verification_model_v2_weights.h5')
 y_pred = model.predict([POI_test, QUERY_test],
                        batch_size=BATCH_SIZE,
                        verbose=1)
