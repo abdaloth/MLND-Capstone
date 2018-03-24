@@ -1,7 +1,6 @@
 from utils import WAV_DICT
 import numpy as np
 import pandas as pd
-import gc
 np.random.seed(42)
 from keras import backend as K
 from keras.models import Model
@@ -30,23 +29,29 @@ def id_model(compile=True, lstm=True, verif=False):
                       metrics=['acc', 'top_k_categorical_accuracy'], optimizer='adam')
     return model
 
+def load_data(verif=False):
+    features = np.load('data/cmvn_features.npy')
+    if(verif):
+        X_train = np.array([features[WAV_DICT[p]] for p in WAV_DICT.keys() if not p.split('\\')[1].startswith('E')])
+        y_train = pd.get_dummies([p.split('\\')[1] for p in WAV_DICT.keys() if not p.split('\\')[1].startswith('E')])
+
+        return X_train, y_train
+    else:
+        train = pd.read_csv('meta/train_id.csv')
+        val = pd.read_csv('meta/val_id.csv')
+        test = pd.read_csv('meta/test_id.csv')
+
+        X_train = np.array([features[WAV_DICT[p]] for p in train.path])
+        y_train = pd.get_dummies(train.label)
+        X_val = np.array([features[WAV_DICT[p]] for p in val.path])
+        y_val = pd.get_dummies(val.label)
+        X_test = np.array([features[WAV_DICT[p]] for p in test.path])
+        y_test = pd.get_dummies(test.label)
+        return X_train, y_train, X_val, y_val, X_test, y_test
 
 if __name__ == '__main__':
-    features = np.load('data/cmvn_features.npy')
-    train = pd.read_csv('meta/train_id.csv')
-    val = pd.read_csv('meta/val_id.csv')
-    test = pd.read_csv('meta/test_id.csv')
-
-    X_train = np.array([features[WAV_DICT[p]] for p in train.path])
-    y_train = pd.get_dummies(train.label)
-    X_val = np.array([features[WAV_DICT[p]] for p in val.path])
-    y_val = pd.get_dummies(val.label)
-    X_test = np.array([features[WAV_DICT[p]] for p in test.path])
-    y_test = pd.get_dummies(test.label)
-
-    del features
-    gc.collect()
+    X_train, y_train = load_data(verif=True)
     K.clear_session()
     model = id_model()
     model.summary()
-    hist = model.fit(X_train, y_train, batch_size=512, epochs=50, validation_data=(X_val, y_val))
+    hist = model.fit(X_train, y_train, batch_size=512, epochs=50)
