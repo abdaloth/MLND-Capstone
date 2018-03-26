@@ -18,10 +18,13 @@
 
 \subsection{Project Overview}
 
-A Deep Neural Network That, given two audio inputs ($A$ , $B$) verifies whether the speaker in $A$ and the speaker in $B$ are the same person.
+Speaker Authentication (or Verification) is the process of verifying the identity of a speaker based on the characteristics of their voice. This problem falls in the biometrics domain and there has been previous attempts to solve it using supervised learning \cite{Campbell2006SupportVM}, unsupervised learning \cite{Reynolds2000SpeakerVU} and of course using deep learning \cite{Nagrani17}. 
+
+In this project, I'll attempt to solve this problem using a deep neural network model.
+
 
 \subsection{Problem Statement} \label{prblmstmt}
-Most implementations of speaker verification systems are dependant on specific phrases (e.g. " Hey, Google..", "Hey, Siri..", "Alexa..") and consistant audio-environment (same microphone, audio quality, etc).
+Most implementations of speaker verification systems are dependant on specific phrases (e.g. " Hey, Google..", "Hey, Siri..", "Alexa..") and consistent audio-environment (same microphone, audio quality, etc).
 What I want to tackle in this project is text-independent speaker verification, in noisy, uncontrolled environments.
 
 Applications of speaker verification include:
@@ -36,6 +39,7 @@ All of these applications require reliable performance in ‘wild’ conditions 
     \item High variance in the speaker age, accent, emotion, intonation, etc.
 \end{enumerate}
 
+I will attempt to solve this problem by building a neural network model that will take as input the features we've extracted from two speaker-audios and outputs the probability of a speaker match.
 \subsection{Metrics}
 To evaluate the model, I'm choosing Equal Error Rate $(EER)$ as the performance metric.
 For each authentication pair the model outputs a continuous variable $X$, which is the estimated probability of a match.
@@ -53,8 +57,8 @@ and the false acceptance rate is given by
 \mbox{FAR}(T)= \int_{T}^\infty f_0(x) \, dx 
 \end{equation}. 
 
-EER is defined as the rate at the threshold $T$ where $FRR(T) = FAR(T)$ (see Figure \ref{fig:EER})
-it is commonly used by verification systems, including our benchmark model.
+EER is defined as the rate at the threshold $T$ where $FRR(T) = FAR(T)$ (see Figure \ref{fig:EER}).
+EER is commonly used as a performance metric for  identity-verification systems, as it balances the rate at which false-acceptance and false-rejection occurs. The lower the EER value, the higher the accuracy of the system. EER is also the metric used by for our benchmark model.
 
 \begin{figure}[H]
     \centering
@@ -72,7 +76,7 @@ VoxCeleb dataset was created by extracting audio from YouTube videos.
 it contains over 100,000 utterances for 1251 celebrities. The speakers are gender balanced and span a wide range of different ethnicities, accents, and ages.
 
 
-These dataset includes varying audio qualities and challenging acoustic environments, such as:
+This dataset includes varying audio qualities and challenging acoustic environments, such as:
 \begin{itemize}
     \item red carpet interviews
     \item outdoor stadium
@@ -82,7 +86,10 @@ These dataset includes varying audio qualities and challenging acoustic environm
     \item amateur multimedia (e.g. Vlogs)
 \end{itemize}
 
-The dataset includes uncontrolled, real-world noise such as  background-chatter, audience reactions, room acoustics, etc. Table \ref{tab:stats_1} and Figure \ref{fig:stats_2} give more statistics on the dataset.
+The dataset also includes uncontrolled, real-world noise such as background-chatter, audience reactions, room acoustics, etc.
+Table \ref{tab:stats_1} gives some idea of the distribution contained in the dataset.
+
+In Figure \ref{fig:stats_2}, you'll see the nationality distribution of the speakers in this dataset. Which gives incite into the distribution of ethnicitis and accents. 
 
 
 \begin{table}[H]
@@ -113,9 +120,16 @@ The dataset includes uncontrolled, real-world noise such as  background-chatter,
 \end{figure}
 
 \subsection{Algorithms and Techniques}
-Since speech is inherently temporal, I decided to take that into account and chose a Recurrent Neural Network as the basis of my model. The big drawback that one might face when using neural networks in general is not having enough data, which fortunately is not an issue in this case.
+Since speech is inherently temporal, I decided to take that into account and chose a Recurrent Neural Network (RNN) as the basis of my model.
 
-To be able to verify, you must first be able to identify. The first step I will do is train a model that identifies the speaker in a given audio file, once the identification model is trained, I'll use it as a base for the siamese network that will handle the classification task.
+RNNs are a type of neural network that take into account the temporal relation between the input features (the value of $X_t$ affects the value of $X_{t+1}$). As an example from our data the audio features at the $t=0$ of an utterance informs the model on how to handle the features at $t=1$.
+
+The big drawback that one might face when using neural networks in general is not having enough data, which fortunately is not an issue in this case since our dataset is large.
+
+To be able to verify, you must first be able to identify. The first step I will do is train an identification model that takes as input features extracted from a given audio file and outputs the probability of who it thinks the speaker is.
+
+Once the identification model is trained, I'll use it as a base for the verification model, which will take audio features extracted from 2 audio files as input and outputs the probability of a speaker match.
+
 \subsection{Benchmark}
 
 I'll be comparing my model to multiple benchmarks.
@@ -164,8 +178,8 @@ The identification model's architecture is as follows:
     \item bidirectional RNN: takes into account the temporal relation between the input features ( the value of $X_t$ affects the value of $X_{t+1}$)
     \item concatenated global max pooling and global average pooling
     \item Dropout:  prevents the neural network from over-fitting by deactivating neurons with a given probability
-    \item Batch Normalization: forces the activations of the previous layer to have a gaussian distribution  \cite{chollet2015keras}
-    \item output layer with softmax activation
+    \item Batch Normalization: forces the activations of the previous layer to have a gaussian distribution.
+    \item output layer with Softmax activation
 \end{itemize}
 See figure \ref{fig:id_arch} for the architecture and table \ref{tab:id_results} for the results of the identification model.
 \begin{figure}[H]
@@ -196,9 +210,13 @@ I used ReLU activation for the middle Dense layers and Sigmoid activation for th
 \end{figure}
 
 \subsection{Refinement}
-Moving from CNNs to RNNs gave the most dramatic improvement. Beyond that, table \ref{tab:id_results} shows the improvements of using CMVNs instead of MFCCs and the marginal improvement of using LSTM over GRU
+Moving from CNNs to RNNs gave the most dramatic improvement. Beyond that, table \ref{tab:id_results} shows the improvements of using CMVNs instead of MFCCs and the marginal improvement of using LSTM over GRU.
+
+As for Hyperparameter tuning, using Adam as the optimizer helped the model converge faster. That, combined with using high dropout rate (0.5) and batch normalization helped the model achieve better results.
+
+\subsection{Coding Challenges}
+most of the coding challenges faced during this project were solved by framing the exact problem in mind, then diving deeply into Keras's\cite{chollet2015keras} or numpy's documentation.
 \section{Results}
-% (approx. 2-3 pages)
 \subsection{Model Evaluation and Validation}
 The final model results can be seen in table \ref{tab:ver_results}.
 
@@ -234,7 +252,8 @@ Possible venues of improvement include:
     \item Invistigate different possible feature representations. such as i-vector, d-vectors and full spectograms.
     \item Revisit CNNs, as I feel like I'm missing something here that will become clear with more research.
 \end{itemize}
-
+\subsection{Reflections}
+I started this project with no prior knowledge in the world of Bio-metrics or audio processing. Working in this new domain strengthened my research skills in ways that will help me with my future projects. I grew more familiar with the libraries and tools available to me. working with hardware constraints forced me to get creative in writing my code to be more memory efficient.
 \pagebreak
 \bibliographystyle{plain}
 \bibliography{references}
