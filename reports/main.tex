@@ -122,9 +122,22 @@ In Figure \ref{fig:stats_2}, you'll see the nationality distribution of the spea
 \subsection{Algorithms and Techniques}
 Since speech is inherently temporal, I decided to take that into account and chose a Recurrent Neural Network (RNN) as the basis of my model.
 
-RNNs are a type of neural network that take into account the temporal relation between the input features. There is an inherent relation between elements of time-series data that a regular neural network cannot grasp. RNNs behave in a way where they 'remember' the previous inputs at each step of working through time-series data, which makes them more suitable for this problem since latent audio features (such as intonation and emotion) come in a sequence and cannot be captured when considering each time-step independantly.
-
 The big drawback that one might face when using neural networks in general is not having enough data, which fortunately is not an issue in this case since our dataset is large.
+
+RNNs are a type of neural network that take into account the temporal relation between the input features. There is an inherent relation between elements of time-series data that a regular neural network cannot grasp. RNNs behave in a way where they 'remember' the previous inputs at each step of working through time-series data, which makes them more suitable for this problem since latent audio features (such as intonation and emotion) come in a sequence and cannot be captured when considering each time-step independently.
+
+Vanilla RNNs however, face a problem with vanishing gradients, back-propagation through each time-step carries less and less information which restricts the scope of training.
+
+we're using more powerful variants of RNN, namely GRU and LSTM which solve this problem by introducing the concept of gates. 
+The main types of gates are:
+\begin{enumerate}
+    \item input gate: which determines what new info it should take into consideration
+    \item forget gate: determines how much of the past information it should 'forget'
+    \item output gate: determines how much information to pass along
+\end{enumerate}
+To learn more on the math behind RNNs and their various configurations, check out the excellent paper by Rafal Jozefowicz et al.\cite{45473}
+
+\vspace{5mm}
 
 To be able to verify, you must first be able to identify. The first step I will do is train an identification model that takes as input features extracted from a given audio file and outputs the probability of who it thinks the speaker is.
 
@@ -216,7 +229,7 @@ I used ReLU activation for the middle Dense layers and Sigmoid activation for th
 \subsection{Refinement}
 Moving from CNNs to RNNs gave the most dramatic improvement. Beyond that, table \ref{tab:id_results} shows the improvements of using CMVNs instead of MFCCs and the marginal improvement of using LSTM over GRU.
 
-As for Hyperparameter tuning, using Adamax as the optimizer helped the model converge faster. That, combined with using high dropout rate (0.5) and batch normalization helped the model achieve better results.
+As for Hyperparameter tuning, using Adamax as the optimizer helped the model converge faster. As opposed to the default RMSProp optimizer which seemed to somehow preforme worse than random with an EER of (0.51). Combining the choice of optimizer with high dropout rate (0.5) and batch normalization helped prevent the model from overfitting at an early stage and achieve better results.
 
 \subsection{Coding Challenges}
 most of the coding challenges faced during this project were solved by framing the exact problem in mind, then diving deeply into Keras's\cite{chollet2015keras} or numpy's documentation.
@@ -250,7 +263,7 @@ In this project, a recurrent neural network that determines whether two audio se
 In figure \ref{fig:optimizers} we see the difference parameter tuning can make and the importance of choosing an appropriate optimizer for the model.
 \begin{figure}[H]
     \centering
-    \includegraphics[scale=.5]{images/admax_v_sgd.png}
+    \includegraphics[scale=.5]{images/adamax_vs_sgd.png}
     \caption{comparing Adamax and SGD optimized models' validation accuracy for the first 10 epochs}
     \label{fig:optimizers}
 \end{figure}
