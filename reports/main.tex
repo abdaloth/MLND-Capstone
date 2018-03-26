@@ -20,7 +20,7 @@
 
 Speaker Authentication (or Verification) is the process of verifying the identity of a speaker based on the characteristics of their voice. This problem falls in the biometrics domain and there has been previous attempts to solve it using supervised learning \cite{Campbell2006SupportVM}, unsupervised learning \cite{Reynolds2000SpeakerVU} and of course using deep learning \cite{Nagrani17}. 
 
-In this project, I'll attempt to solve this problem using a deep neural network model.
+In this project, I'll attempt to solve this problem using a deep neural network model trained on the VoxCeleb dataset \cite{Nagrani17}.
 
 
 \subsection{Problem Statement} \label{prblmstmt}
@@ -122,13 +122,15 @@ In Figure \ref{fig:stats_2}, you'll see the nationality distribution of the spea
 \subsection{Algorithms and Techniques}
 Since speech is inherently temporal, I decided to take that into account and chose a Recurrent Neural Network (RNN) as the basis of my model.
 
-RNNs are a type of neural network that take into account the temporal relation between the input features (the value of $X_t$ affects the value of $X_{t+1}$). As an example from our data the audio features at the $t=0$ of an utterance informs the model on how to handle the features at $t=1$.
+RNNs are a type of neural network that take into account the temporal relation between the input features. There is an inherent relation between elements of time-series data that a regular neural network cannot grasp. RNNs behave in a way where they 'remember' the previous inputs at each step of working through time-series data, which makes them more suitable for this problem since latent audio features (such as intonation and emotion) come in a sequence and cannot be captured when considering each time-step independantly.
 
 The big drawback that one might face when using neural networks in general is not having enough data, which fortunately is not an issue in this case since our dataset is large.
 
 To be able to verify, you must first be able to identify. The first step I will do is train an identification model that takes as input features extracted from a given audio file and outputs the probability of who it thinks the speaker is.
 
 Once the identification model is trained, I'll use it as a base for the verification model, which will take audio features extracted from 2 audio files as input and outputs the probability of a speaker match.
+
+The Architecture of both models can be seen in Figures \ref{fig:id_arch} \& \ref{fig:ver_arch} and will be discussed in further detail later on.
 
 \subsection{Benchmark}
 
@@ -185,6 +187,7 @@ See figure \ref{fig:id_arch} for the architecture and table \ref{tab:id_results}
 \begin{figure}[H]
     \centering
     \includegraphics[scale=.65]{images/id_model.png}
+    \caption{}
     \label{fig:id_arch}
 \end{figure}
 \begin{table}[H]
@@ -206,13 +209,14 @@ I used ReLU activation for the middle Dense layers and Sigmoid activation for th
 \begin{figure}[H]
     \centering
     \includegraphics[scale=.65]{images/verification_model.png}
+    \caption{}
     \label{fig:ver_arch}
 \end{figure}
 
 \subsection{Refinement}
 Moving from CNNs to RNNs gave the most dramatic improvement. Beyond that, table \ref{tab:id_results} shows the improvements of using CMVNs instead of MFCCs and the marginal improvement of using LSTM over GRU.
 
-As for Hyperparameter tuning, using Adam as the optimizer helped the model converge faster. That, combined with using high dropout rate (0.5) and batch normalization helped the model achieve better results.
+As for Hyperparameter tuning, using Adamax as the optimizer helped the model converge faster. That, combined with using high dropout rate (0.5) and batch normalization helped the model achieve better results.
 
 \subsection{Coding Challenges}
 most of the coding challenges faced during this project were solved by framing the exact problem in mind, then diving deeply into Keras's\cite{chollet2015keras} or numpy's documentation.
@@ -242,6 +246,14 @@ The final results (as seen in table \ref{tab:ver_results}), are better than 2 of
 given more data as input, using longer utterances for example will reduce the likelihood of miss-classification exponentially.
 \section{Conclusion}
 In this project, a recurrent neural network that determines whether two audio segments come from the same speaker has been developed.  As it currently stands the model can still be used in production as mentioned in the previous section. The model exceeded 2 of the 3 proposed benchmarks which means that while the model has preformed well, there's still room for improvement.
+\subsection{Free-Form Visualization}
+In figure \ref{fig:optimizers} we see the difference parameter tuning can make and the importance of choosing an appropriate optimizer for the model.
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=.5]{images/admax_v_sgd.png}
+    \caption{comparing Adamax and SGD optimized models' validation accuracy for the first 10 epochs}
+    \label{fig:optimizers}
+\end{figure}
 \subsection{Improvement}
 due to time and computational resource constraints, I've not been able to experiment with some of the approaches I have initiallly considered.
 
