@@ -40,7 +40,12 @@ def load_data():
 #%%
 
 
-def verif_model(lstm=True, verif=True, w_path='meta/models/gru_identification_model.h5'):
+def verif_model(lstm=True, verif=True, w_path='meta/models/lstm_identification_model.h5'):
+    """
+    returns the verification model
+
+    w_path is the path of the trained weights of the base identification model
+    """
     input_POI = Input(shape=(299, 26))
     input_Query = Input(shape=(299, 26))
 

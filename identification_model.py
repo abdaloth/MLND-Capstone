@@ -8,6 +8,11 @@ from keras.layers import Input, Dense, Dropout, Bidirectional, concatenate, Spat
 from keras.layers import CuDNNGRU, CuDNNLSTM, GlobalAvgPool1D, GlobalMaxPool1D, BatchNormalization
 
 def id_model(compile=True, lstm=True, verif=False):
+    """  returns the identification model
+
+    if used as base for verification, do not compile.
+    if used to train on verification data, set verif = True
+    """
     inp = Input(shape=(299, 26))
     x = SpatialDropout1D(.1)(inp)
     if(lstm):
@@ -30,6 +35,10 @@ def id_model(compile=True, lstm=True, verif=False):
     return model
 
 def load_data(verif=False):
+    """
+    the verif param chooses whether to load data used for verification
+    or data used for identification model
+    """
     features = np.load('data/cmvn_features.npy')
     if(verif):
         X_train = np.array([features[WAV_DICT[p]] for p in WAV_DICT.keys() if not p.split('\\')[1].startswith('E')])

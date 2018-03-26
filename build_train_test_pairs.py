@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Placeholder docstrings.
-
-Todo:
-    * Write Docstring
-    * Write Comments
+"""
+This module is responsible for creating the training dataset for the verification model
 """
 
 import re
@@ -12,7 +9,7 @@ import pandas as pd
 from glob import glob
 from warnings import warn
 
-random.seed('42')
+random.seed('42') # for reproducibility
 TRAIN_UTTERANCES = [u for u in glob('data\\*\\*.wav')
                     if not u.split('\\')[1].startswith('E')]
 TRAIN_POIS = sorted(set([u.split('\\')[1] for u in TRAIN_UTTERANCES]))
@@ -23,7 +20,14 @@ columns = ['is_match', 'POI_wav', 'Query_wav']
 
 
 def make_trial(utterance, utterance_list, same=False, max_tries=500):
-    for i in range(max_tries):
+    """
+    this function takes as input an utterance and a list of utterances and creates
+    a labeled verification pair.
+    if same == True it will create pairs that are a speaker match. ensuring the
+    two utterances are from different video sources.
+    else it will make a pair where the speakers do not match.
+    """
+    for i in range(max_tries): # to keep the function from running too long
         pair = random.choice(utterance_list)
         if(same):
             if(utterance[:-12] != pair[:-12]):
@@ -54,6 +58,7 @@ if __name__ == '__main__':
     test_pairs = [sorted(re.sub(r'/', r'\\', p).split()) for p in test_pairs]
 
     df = pd.DataFrame(test_pairs, columns=columns)
+    # The video Emily_Atack\\d2Lasybvo7s is a duplicate
     df.loc[:, 'POI_wav'] = df.POI_wav.apply(lambda p: None
                                             if 'Emily_Atack\\d2Lasybvo7s' in p
                                             else 'data\\' + p)
